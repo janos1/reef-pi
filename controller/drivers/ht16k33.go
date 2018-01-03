@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -21,39 +22,79 @@ var digits = map[rune]uint16{
 	'0': 63,
 	'1': 6,
 	'2': 219,
-	'3': 143,
+	'3': 207,
 	'4': 230,
-	'5': 105, //
+	'5': 237,
 	'6': 253,
 	'7': 7,
 	'8': 255,
 	'9': 239,
 	'A': 247,
-	'B': 143,
+	'B': 4815,
 	'C': 57,
-	'D': 15,
+	'D': 4623,
 	'E': 249,
 	'F': 113,
 	'G': 189,
 	'H': 246,
-	'I': 0,
+	'I': 4617,
 	'J': 30,
-	'K': 112,
+	'K': 9328,
 	'L': 56,
-	'M': 54,
-	'N': 54,
+	'M': 1334,
+	'N': 8502,
 	'O': 63,
 	'P': 243,
-	'Q': 63,
-	'R': 243,
+	'Q': 8255,
+	'R': 8435,
 	'S': 237,
-	'T': 1,
+	'T': 4609,
 	'U': 62,
-	'V': 48,
-	'W': 54,
-	'X': 0,
-	'Y': 0,
-	'Z': 9,
+	'V': 3120,
+	'W': 10294,
+	'X': 11520,
+	'Y': 5376,
+	'Z': 3081,
+	' ': 0,
+}
+
+var allRune = []rune{
+	'0',
+	'1',
+	'2',
+	'3',
+	'4',
+	'5',
+	'6',
+	'7',
+	'8',
+	'9',
+	'A',
+	'B',
+	'C',
+	'D',
+	'E',
+	'F',
+	'G',
+	'H',
+	'I',
+	'J',
+	'K',
+	'L',
+	'M',
+	'N',
+	'O',
+	'P',
+	'Q',
+	'R',
+	'S',
+	'T',
+	'U',
+	'V',
+	'W',
+	'X',
+	'Y',
+	'Z',
 }
 
 type HT16K33 struct {
@@ -74,75 +115,46 @@ func Demo() error {
 	if err := bus.WriteToReg(addr, REGISTER_DIMMING|5, []byte{0x00}); err != nil {
 		return err
 	}
-	runes := []rune{
-		'0',
-		'1',
-		'2',
-		'3',
-		'4',
-		'5',
-		'6',
-		'7',
-		'8',
-		'9',
-		'A',
-		'B',
-		'C',
-		'D',
-		'E',
-		'F',
-		'G',
-		'H',
-		'I',
-		'J',
-		'K',
-		'L',
-		'M',
-		'N',
-		'O',
-		'P',
-		'Q',
-		'R',
-		'S',
-		'T',
-		'U',
-		'V',
-		'W',
-		'X',
-		'Y',
-		'Z',
-	}
 	bytes := make([]byte, 16)
 	if err := bus.WriteToReg(addr, 0x00, bytes); err != nil {
 		return err
 	}
+
 	reader := bufio.NewReader(os.Stdin)
-	for _, r := range runes {
-		item := digits[r]
-		bytes[0], bytes[1] = byte(item), byte(item>>8)
-		if err := bus.WriteToReg(addr, 0x00, bytes); err != nil {
-			return err
+	s, _ := reader.ReadString('\n')
+	s = strings.TrimSpace(s)
+	fmt.Println(s)
+	l := len(s)
+	for i := 0; 
+	for i, c := range s {
+		row := i % 4
+		item := digits[c]
+		bytes[row*2], bytes[row*2+1] = byte(item), byte(item>>8)
+		bus.WriteToReg(addr, 0x00, bytes)
+		if l == i+1 {
+			continue
 		}
-		fmt.Printf("%s\n", string(r))
-		reader.ReadString('\n')
+		row++
+		item = digits[rune(s[i+1])]
+		bytes[row*2], bytes[row*2+1] = byte(item), byte(item>>8)
+		bus.WriteToReg(addr, 0x00, bytes)
+
+		if l == i+2 {
+			continue
+		}
+		row++
+		item = digits[rune(s[i+2])]
+		bytes[row*2], bytes[row*2+1] = byte(item), byte(item>>8)
+		bus.WriteToReg(addr, 0x00, bytes)
+
+		if l == i+3 {
+			continue
+		}
+		row++
+		item = digits[rune(s[i+3])]
+		bytes[row*2], bytes[row*2+1] = byte(item), byte(item>>8)
+		bus.WriteToReg(addr, 0x00, bytes)
 		time.Sleep(time.Second)
 	}
-	/*
-		for row := 0; row < 8; row++ {
-			inc := uint16(1)
-			i := inc
-			for j := 0; j < 8; j++ {
-				bytes[row] = byte(i)
-				if err := bus.WriteToReg(addr, 0x00, bytes); err != nil {
-					return err
-				}
-				time.Sleep(time.Millisecond * 100)
-				inc = inc << 1
-				i = i + inc
-			}
-			fmt.Println("Row:", row)
-		}
-		return bus.WriteToReg(addr, 0x00, make([]byte, 17))
-	*/
 	return nil
 }
